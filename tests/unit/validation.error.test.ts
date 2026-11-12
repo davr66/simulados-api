@@ -4,7 +4,7 @@ import { ValidationError } from '../../src/errors/validation.error.js';
 describe('ValidationError', () => {
   it('preserva status HTTP e mensagem de validação', () => {
     // Arrange: create a validation error with a domain message.
-    const erro = new ValidationError('A quantidade deve ser maior que zero.');
+    const erro = new ValidationError('A quantidade deve ser um inteiro positivo.');
 
     // Act: read the public error properties.
     const resultado = {
@@ -17,7 +17,7 @@ describe('ValidationError', () => {
     expect(resultado).toEqual({
       name: 'ValidationError',
       statusCode: 400,
-      message: 'A quantidade deve ser maior que zero.',
+      message: 'A quantidade deve ser um inteiro positivo.',
     });
   });
 });

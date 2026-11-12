@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CriarSimuladoService,
+  type FiltrosSimulado,
   type QuestaoComAlternativas,
+  type QuestaoSemGabarito,
   type SimuladoRepository,
 } from '../../src/services/criar-simulado.service.js';
 import { NotFoundError } from '../../src/errors/not-found.error.js';
@@ -15,6 +17,21 @@ function criarQuestao(
     id,
     enunciado: `Enunciado ${id}`,
     alternativas,
+  };
+}
+
+function executarEntradaDoController(
+  service: CriarSimuladoService,
+  entrada: unknown,
+): Promise<QuestaoSemGabarito[]> {
+  return service.executar(entrada as FiltrosSimulado);
+}
+
+function criarRepositorioValido(): SimuladoRepository {
+  return {
+    bancaExiste: async () => true,
+    concursoExiste: async () => true,
+    buscarQuestoes: async () => [],
   };
 }
 
@@ -178,8 +195,128 @@ describe('CriarSimuladoService', () => {
     await expect(execucao).rejects.toBeInstanceOf(ValidationError);
     await expect(execucao).rejects.toMatchObject({
       statusCode: 400,
-      message: 'A quantidade deve ser maior que zero.',
+      message: 'A quantidade deve ser um inteiro positivo.',
     });
     expect(buscaExecutada).toBe(false);
+  });
+
+  it('rejeita quantidade negativa antes de consultar o repositorio', async () => {
+    // Arrange: repository is valid but must not be accessed for invalid input.
+    const repository = criarRepositorioValido();
+    const bancaConsultada = vi.spyOn(repository, 'bancaExiste');
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: attempt to generate a simulated exam with a negative amount.
+    const execucao = service.executar({
+      bancaId: 1,
+      concursoId: 2,
+      quantidade: -1,
+    });
+
+    // Assert: negative amounts are rejected before repository access.
+    await expect(execucao).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'A quantidade deve ser um inteiro positivo.',
+    });
+    expect(bancaConsultada).not.toHaveBeenCalled();
+  });
+
+  it('rejeita quantidade decimal antes de consultar o repositorio', async () => {
+    // Arrange: repository is valid but must not be accessed for invalid input.
+    const repository = criarRepositorioValido();
+    const bancaConsultada = vi.spyOn(repository, 'bancaExiste');
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: attempt to generate a simulated exam with a fractional amount.
+    const execucao = service.executar({
+      bancaId: 1,
+      concursoId: 2,
+      quantidade: 1.5,
+    });
+
+    // Assert: fractional amounts are rejected before repository access.
+    await expect(execucao).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'A quantidade deve ser um inteiro positivo.',
+    });
+    expect(bancaConsultada).not.toHaveBeenCalled();
+  });
+
+  it('rejeita bancaId invalido antes de consultar o repositorio', async () => {
+    // Arrange: repository is valid but must not be accessed for an invalid bank ID.
+    const repository = criarRepositorioValido();
+    const bancaConsultada = vi.spyOn(repository, 'bancaExiste');
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: attempt to generate a simulated exam with a non-positive bank ID.
+    const execucao = service.executar({
+      bancaId: 0,
+      concursoId: 2,
+      quantidade: 1,
+    });
+
+    // Assert: invalid bank IDs are rejected before repository access.
+    await expect(execucao).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'O ID da banca deve ser um inteiro positivo.',
+    });
+    expect(bancaConsultada).not.toHaveBeenCalled();
+  });
+
+  it('rejeita concursoId invalido antes de consultar o repositorio', async () => {
+    // Arrange: repository is valid but must not be accessed for an invalid contest ID.
+    const repository = criarRepositorioValido();
+    const bancaConsultada = vi.spyOn(repository, 'bancaExiste');
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: attempt to generate a simulated exam with a fractional contest ID.
+    const execucao = service.executar({
+      bancaId: 1,
+      concursoId: 2.5,
+      quantidade: 1,
+    });
+
+    // Assert: invalid contest IDs are rejected before repository access.
+    await expect(execucao).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'O ID do concurso deve ser um inteiro positivo.',
+    });
+    expect(bancaConsultada).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['bancaId', { bancaId: '1', concursoId: 2, quantidade: 1 }],
+    ['concursoId', { bancaId: 1, concursoId: '2', quantidade: 1 }],
+    ['quantidade', { bancaId: 1, concursoId: 2, quantidade: '1' }],
+  ])('rejeita valor não numérico em %s vindo do controller', async (_campo, entrada) => {
+    // Arrange: controller values arrive as strings and repository must not be accessed.
+    const repository = criarRepositorioValido();
+    const bancaConsultada = vi.spyOn(repository, 'bancaExiste');
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: execute the service with an unparsed controller payload.
+    const execucao = executarEntradaDoController(service, entrada);
+
+    // Assert: malformed controller input is rejected before repository access.
+    await expect(execucao).rejects.toBeInstanceOf(ValidationError);
+    expect(bancaConsultada).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['bancaId', { bancaId: Number.NaN, concursoId: 2, quantidade: 1 }],
+    ['concursoId', { bancaId: 1, concursoId: Number.POSITIVE_INFINITY, quantidade: 1 }],
+    ['quantidade', { bancaId: 1, concursoId: 2, quantidade: Number.NaN }],
+  ])('rejeita valor não finito em %s', async (_campo, entrada) => {
+    // Arrange: non-finite controller values must not reach the repository.
+    const repository = criarRepositorioValido();
+    const bancaConsultada = vi.spyOn(repository, 'bancaExiste');
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: execute the service with a non-finite numeric payload.
+    const execucao = executarEntradaDoController(service, entrada);
+
+    // Assert: non-finite values are rejected before repository access.
+    await expect(execucao).rejects.toBeInstanceOf(ValidationError);
+    expect(bancaConsultada).not.toHaveBeenCalled();
   });
 });
