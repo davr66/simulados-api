@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "types":["node"]
+  },
+  "include": ["src", "tests", "tsconfig.json"]
+}
