@@ -82,14 +82,6 @@ async function seed(trx: Knex.Transaction): Promise<void> {
   await trx('alternativa').insert(alternativas);
 }
 
-async function main(): Promise<void> {
-  await database.transaction(seed);
-  console.log('Seed executado com sucesso.');
-  await database.destroy();
+export async function executarSeed(databaseInstance: Knex = database): Promise<void> {
+  await databaseInstance.transaction(seed);
 }
-
-main().catch(async (error: unknown) => {
-  console.error('Falha ao executar o seed.', error);
-  await database.destroy();
-  process.exitCode = 1;
-});
