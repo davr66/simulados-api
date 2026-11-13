@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../src/middlewares/error-handler.js';
 import { NotFoundError } from '../../src/errors/not-found.error.js';
+import { logger } from '../../src/observability/logger.js';
 
 function criarResposta(): Response {
   const response = {
@@ -34,7 +35,7 @@ describe('errorHandler', () => {
     // Arrange: middleware receives an unexpected internal error.
     const response = criarResposta();
     const erro = new Error('Detalhe interno sensível.');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
 
     // Act: normalize the error response.
     errorHandler(erro, {} as Request, response, vi.fn());
@@ -46,14 +47,17 @@ describe('errorHandler', () => {
       statusCode: 500,
       message: 'Erro interno do servidor.',
     });
-    expect(consoleError).toHaveBeenCalledWith(erro);
-    consoleError.mockRestore();
+    expect(loggerError).toHaveBeenCalledWith('Erro interno da aplicação', {
+      error: erro.message,
+      stack: erro.stack,
+    });
+    loggerError.mockRestore();
   });
 
   it('normaliza rejeicoes que nao sao instancias de Error', () => {
     // Arrange: middleware receives an unknown rejection value.
     const response = criarResposta();
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
 
     // Act: normalize the unknown error response.
     errorHandler('falha desconhecida', {} as Request, response, vi.fn());
@@ -65,7 +69,10 @@ describe('errorHandler', () => {
       statusCode: 500,
       message: 'Erro interno do servidor.',
     });
-    expect(consoleError).toHaveBeenCalledWith(expect.any(Error));
-    consoleError.mockRestore();
+    expect(loggerError).toHaveBeenCalledWith('Erro interno da aplicação', {
+      error: expect.any(String),
+      stack: expect.any(String),
+    });
+    loggerError.mockRestore();
   });
 });
