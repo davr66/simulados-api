@@ -10,6 +10,7 @@
     "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.72.2",
@@ -21,6 +22,9 @@
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/run-seed.ts",
     "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint ."
   }
 }

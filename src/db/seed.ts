@@ -46,10 +46,12 @@ async function seed(trx: Knex.Transaction): Promise<void> {
     { cargo_id: 1, materia_id: 4 },
     { cargo_id: 2, materia_id: 1 },
     { cargo_id: 2, materia_id: 2 },
+    { cargo_id: 2, materia_id: 3 },
     { cargo_id: 2, materia_id: 4 },
     { cargo_id: 2, materia_id: 5 },
     { cargo_id: 3, materia_id: 1 },
     { cargo_id: 3, materia_id: 2 },
+    { cargo_id: 3, materia_id: 3 },
     { cargo_id: 3, materia_id: 4 },
     { cargo_id: 3, materia_id: 5 },
   ]);
