@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler } from 'express';
+import { logger } from '../observability/logger.js';
 
 interface ErroHttp extends Error {
   statusCode?: number;
@@ -14,7 +15,10 @@ export const errorHandler: ErrorRequestHandler = (erro, _request, response, next
   const statusCode = temStatusCode(erroNormalizado) ? erroNormalizado.statusCode ?? 500 : 500;
 
   if (statusCode === 500) {
-    console.error(erroNormalizado);
+    logger.error('Erro interno da aplicação', {
+      error: erroNormalizado.message,
+      stack: erroNormalizado.stack,
+    });
   }
 
   response.status(statusCode).json({
