@@ -7,6 +7,7 @@ function obrigatoria(nome: string): string {
 }
 
 export const config = {
+  nodeEnv: process.env.NODE_ENV ?? 'development',
   databaseUrl: obrigatoria('DATABASE_URL'),
   port: Number(process.env.PORT ?? 3000),
 };

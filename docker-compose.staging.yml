@@ -1,0 +1,11 @@
+services:
+  db:
+    volumes:
+      - pgdata_staging:/var/lib/postgresql/data
+
+  api:
+    environment:
+      NODE_ENV: staging
+
+volumes:
+  pgdata_staging:
