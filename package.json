@@ -23,7 +23,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "npm run migrate && tsx src/server.ts",
+    "start": "npm run migrate && npm run seed && tsx src/server.ts",
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/run-seed.ts",
     "test": "vitest run",
