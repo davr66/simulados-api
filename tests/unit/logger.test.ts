@@ -1,25 +1,31 @@
-import { describe, expect, it, vi } from 'vitest';
-import { logger } from '../../src/observability/logger.js';
+import { Writable } from 'node:stream';
+import { describe, expect, it } from 'vitest';
+import { criarLogger } from '../../src/observability/logger.js';
 
 describe('logger', () => {
-  it('escreve eventos informativos como JSON estruturado', () => {
-    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  it('escreve eventos informativos em JSON estruturado usando pino', () => {
+    let linha = '';
+    const destination = new Writable({
+      write(chunk, _encoding, callback) {
+        linha += chunk.toString();
+        callback();
+      },
+    });
+    const logger = criarLogger(destination);
 
     logger.info('Requisição HTTP concluída', {
       method: 'GET',
       statusCode: 200,
     });
 
-    const entrada = JSON.parse(consoleLog.mock.calls[0]?.[0] as string) as Record<string, unknown>;
+    const entrada = JSON.parse(linha) as Record<string, unknown>;
 
     expect(entrada).toMatchObject({
-      level: 'info',
-      message: 'Requisição HTTP concluída',
+      level: 30,
+      msg: 'Requisição HTTP concluída',
       method: 'GET',
       statusCode: 200,
     });
-    expect(entrada.timestamp).toEqual(expect.any(String));
-
-    consoleLog.mockRestore();
+    expect(entrada.time).toEqual(expect.any(String));
   });
 });
