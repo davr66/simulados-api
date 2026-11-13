@@ -110,4 +110,31 @@ describe('SimuladoController', () => {
     // Assert: controller preserves the domain error.
     await expect(execucao).rejects.toBe(erro);
   });
+
+  it('rejeita filtros avançados quando a feature flag está desabilitada', async () => {
+    // Arrange: advanced filters are disabled for the current environment.
+    const service = criarServico();
+    const executar = vi.spyOn(service, 'executar');
+    const controller = new SimuladoController(service, {
+      filtrosAvancadosEnabled: false,
+    });
+
+    // Act: attempt to use an advanced filter.
+    const execucao = controller.criar(
+      criarRequisicao({
+        banca_id: '1',
+        concurso_id: '2',
+        cargo_id: '3',
+        quantidade: '5',
+      }),
+      criarResposta(),
+    );
+
+    // Assert: disabled functionality is rejected before the service is called.
+    await expect(execucao).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'Os filtros avançados estão desabilitados.',
+    });
+    expect(executar).not.toHaveBeenCalled();
+  });
 });

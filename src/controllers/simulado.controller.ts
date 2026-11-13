@@ -3,6 +3,10 @@ import { CriarSimuladoService } from '../services/criar-simulado.service.js';
 import { ValidationError } from '../errors/validation.error.js';
 import type { FiltrosSimulado } from '../types/simulado.js';
 
+export interface SimuladoControllerOptions {
+  filtrosAvancadosEnabled: boolean;
+}
+
 function converterParametro(nome: string, valor: unknown): number {
   if (typeof valor !== 'string' || !/^[1-9]\d*$/.test(valor)) {
     throw new ValidationError(`O parâmetro '${nome}' deve ser um inteiro positivo.`);
@@ -18,7 +22,10 @@ function converterParametro(nome: string, valor: unknown): number {
 }
 
 export class SimuladoController {
-  public constructor(private readonly service: CriarSimuladoService) {}
+  public constructor(
+    private readonly service: CriarSimuladoService,
+    private readonly options: SimuladoControllerOptions = { filtrosAvancadosEnabled: true },
+  ) {}
 
   public async criar(request: Request, response: Response): Promise<void> {
     const filtros: FiltrosSimulado = {
@@ -27,11 +34,21 @@ export class SimuladoController {
       quantidade: converterParametro('quantidade', request.query.quantidade),
     };
 
-    if (request.query.cargo_id !== undefined) {
+    const cargoIdInformado = request.query.cargo_id !== undefined;
+    const materiaIdInformado = request.query.materia_id !== undefined;
+
+    if (
+      !this.options.filtrosAvancadosEnabled &&
+      (cargoIdInformado || materiaIdInformado)
+    ) {
+      throw new ValidationError('Os filtros avançados estão desabilitados.');
+    }
+
+    if (cargoIdInformado) {
       filtros.cargoId = converterParametro('cargo_id', request.query.cargo_id);
     }
 
-    if (request.query.materia_id !== undefined) {
+    if (materiaIdInformado) {
       filtros.materiaId = converterParametro('materia_id', request.query.materia_id);
     }
 
