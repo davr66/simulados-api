@@ -4,6 +4,7 @@ import type {
   FiltrosSimulado,
   QuestaoComAlternativas,
 } from '../types/simulado.js';
+import { NotFoundError } from '../errors/not-found.error.js';
 import type { SimuladoRepository } from './simulado.repository.js';
 
 interface QuestaoRow {
@@ -31,6 +32,7 @@ export class KnexSimuladoRepository implements SimuladoRepository {
   }
 
   public async buscarQuestoes(filtros: FiltrosSimulado): Promise<QuestaoComAlternativas[]> {
+    await this.validarBancaDoConcurso(filtros.bancaId, filtros.concursoId);
     const questoes = await this.buscarIdsDasQuestoes(filtros);
 
     if (questoes.length === 0) {
@@ -68,10 +70,22 @@ export class KnexSimuladoRepository implements SimuladoRepository {
           query.andWhere('questao.materia_id', filtros.materiaId);
         }
       })
-      .orderBy('questao.id')
-      .limit(filtros.quantidade);
+      .orderBy('questao.id');
 
     return (await consulta) as QuestaoRow[];
+  }
+
+  private async validarBancaDoConcurso(bancaId: number, concursoId: number): Promise<void> {
+    const concurso = await this.database('concurso')
+      .select('banca_id')
+      .where('id', concursoId)
+      .first();
+
+    if (concurso !== undefined && concurso.banca_id !== bancaId) {
+      throw new NotFoundError(
+        `Concurso informado com o ID '${concursoId}' não pertence à banca informada com o ID '${bancaId}'.`,
+      );
+    }
   }
 
   private agruparQuestoes(
