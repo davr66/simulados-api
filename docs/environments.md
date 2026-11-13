@@ -61,3 +61,8 @@ em development, staging ou produção.
 
 Os arquivos `.env.development`, `.env.staging` e `.env.test` são locais e
 ignorados pelo Git. Apenas os arquivos `.example` devem ser versionados.
+
+O CI executa Gitleaks após o checkout para bloquear credenciais ou tokens
+acidentalmente versionados. O scan usa o histórico e o conteúdo do repositório;
+segredos de execução continuam configurados exclusivamente nos Secrets do
+GitHub Actions ou nas variáveis do provedor de deploy.
