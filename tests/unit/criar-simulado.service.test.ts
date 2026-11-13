@@ -171,6 +171,30 @@ describe('CriarSimuladoService', () => {
     expect(resultado.map((questao) => questao.id)).toEqual([2, 1]);
   });
 
+  it('limita a quantidade somente depois de embaralhar o universo de questoes', async () => {
+    // Arrange: repository returns more questions than requested.
+    const repository: SimuladoRepository = {
+      bancaExiste: async () => true,
+      concursoExiste: async () => true,
+      buscarQuestoes: async () =>
+        [1, 2, 3, 4, 5].map((id) =>
+          criarQuestao(id, [{ id: id * 10, texto: `Alternativa ${id}`, correta: true }]),
+        ),
+    };
+    const service = new CriarSimuladoService(repository, () => 0);
+
+    // Act: request only two questions from the five-question universe.
+    const resultado = await service.executar({
+      bancaId: 1,
+      concursoId: 2,
+      quantidade: 2,
+    });
+
+    // Assert: shuffle happens before slicing, so the shuffled universe is sliced.
+    expect(resultado).toHaveLength(2);
+    expect(resultado.map((questao) => questao.id)).toEqual([2, 3]);
+  });
+
   it('rejeita quantidade zero antes de consultar o repositorio', async () => {
     // Arrange: repository should not be consulted for an invalid amount.
     let buscaExecutada = false;
