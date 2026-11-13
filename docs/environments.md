@@ -30,6 +30,12 @@ docker compose --env-file .env.staging -f docker-compose.yml -f docker-compose.s
 A API fica em `http://localhost:3001` e o PostgreSQL fica exposto em
 `localhost:5434`. O volume `pgdata_staging` é separado do desenvolvimento.
 
+O recurso de filtros por cargo e matéria é controlado por
+`SIMULADO_FILTROS_AVANCADOS_ENABLED`. Ele fica habilitado nos exemplos de
+development e staging. Para simular um rollout desabilitado, defina a variável
+como `false`; requisições que informarem `cargo_id` ou `materia_id` retornarão
+HTTP 400.
+
 Para executar migrações no staging local:
 
 ```powershell
