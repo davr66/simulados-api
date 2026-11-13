@@ -61,6 +61,9 @@ jobs:
       - name: Dependency audit (SCA)
         run: npm audit --audit-level=high
 
+      - name: Validate OpenAPI
+        run: npm run openapi:lint
+
       - name: Lint
         run: npm run lint
 
