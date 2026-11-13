@@ -1,33 +1,31 @@
+import pino, { type DestinationStream } from 'pino';
+import { traceIdAtual } from './trace-context.js';
+
 type CamposLog = Record<string, unknown>;
 
-function escrever(
-  nivel: 'info' | 'error',
-  mensagem: string,
-  campos: CamposLog = {},
-): void {
-  const entrada = {
-    timestamp: new Date().toISOString(),
-    level: nivel,
-    message: mensagem,
-    ...campos,
-  };
-
-  const linha = JSON.stringify(entrada);
-
-  if (nivel === 'error') {
-    console.error(linha);
-    return;
-  }
-
-  console.log(linha);
+export interface LoggerAplicacao {
+  info(mensagem: string, campos?: CamposLog): void;
+  error(mensagem: string, campos?: CamposLog): void;
 }
 
-export const logger = {
-  info(mensagem: string, campos?: CamposLog): void {
-    escrever('info', mensagem, campos);
-  },
+export function criarLogger(destination: DestinationStream = process.stdout): LoggerAplicacao {
+  const instance = pino(
+    {
+      base: null,
+      timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    destination,
+  );
 
-  error(mensagem: string, campos?: CamposLog): void {
-    escrever('error', mensagem, campos);
-  },
-};
+  return {
+    info(mensagem: string, campos: CamposLog = {}): void {
+      instance.info({ ...campos, ...(traceIdAtual() ? { traceId: traceIdAtual() } : {}) }, mensagem);
+    },
+
+    error(mensagem: string, campos: CamposLog = {}): void {
+      instance.error({ ...campos, ...(traceIdAtual() ? { traceId: traceIdAtual() } : {}) }, mensagem);
+    },
+  };
+}
+
+export const logger = criarLogger();
