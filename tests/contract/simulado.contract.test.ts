@@ -27,6 +27,21 @@ describe('Contrato HTTP de simulados', () => {
     // Assert: response follows the health contract.
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: 'ok' });
+    expect(response.headers['x-trace-id']).toEqual(expect.any(String));
+  });
+
+  it('propaga trace id informado e expõe métricas RED', async () => {
+    const traceId = 'trace-de-teste-123';
+
+    const response = await request(app)
+      .get('/health')
+      .set('X-Trace-Id', traceId);
+    const metricsResponse = await request(app).get('/metrics');
+
+    expect(response.headers['x-trace-id']).toBe(traceId);
+    expect(metricsResponse.status).toBe(200);
+    expect(metricsResponse.text).toContain('http_requests_total');
+    expect(metricsResponse.text).toContain('http_request_duration_seconds');
   });
 
   it('retorna simulado sem expor o gabarito', async () => {
