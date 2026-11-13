@@ -1,0 +1,10 @@
+extends: spectral:oas
+
+rules:
+  operation-description:
+    description: Todas as operações devem possuir descrição.
+    given: $.paths[*][get,post,put,patch,delete]
+    severity: error
+    then:
+      field: description
+      function: truthy
