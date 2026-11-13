@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: Simulados API
+  version: 1.0.0
+  description: API para geração de simulados de questões de concursos públicos.
+  contact:
+    name: Equipe Simulados API
+servers:
+- url: http://localhost:3000
+  description: Desenvolvimento local
+tags:
+- name: Health
+  description: Operação de disponibilidade.
+- name: Simulados
+  description: Operações de geração de simulados.
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Verifica a disponibilidade da API
+      description: Retorna o estado operacional da API.
+      tags:
+      - Health
+      responses:
+        '200':
+          description: API disponível
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/simulados:
+    get:
+      operationId: criarSimulado
+      summary: Gera um simulado
+      description: Busca, embaralha e retorna questões sem expor o gabarito.
+      tags:
+      - Simulados
+      parameters:
+      - $ref: '#/components/parameters/BancaId'
+      - $ref: '#/components/parameters/ConcursoId'
+      - $ref: '#/components/parameters/CargoId'
+      - $ref: '#/components/parameters/MateriaId'
+      - $ref: '#/components/parameters/Quantidade'
+      responses:
+        '200':
+          description: Questões encontradas. Pode conter menos itens que a quantidade solicitada.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Questao'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  parameters:
+    BancaId:
+      name: banca_id
+      in: query
+      required: true
+      description: ID positivo da banca.
+      schema:
+        type: integer
+        minimum: 1
+    ConcursoId:
+      name: concurso_id
+      in: query
+      required: true
+      description: ID positivo do concurso.
+      schema:
+        type: integer
+        minimum: 1
+    CargoId:
+      name: cargo_id
+      in: query
+      required: false
+      description: Filtro opcional por cargo.
+      schema:
+        type: integer
+        minimum: 1
+    MateriaId:
+      name: materia_id
+      in: query
+      required: false
+      description: Filtro opcional por matéria.
+      schema:
+        type: integer
+        minimum: 1
+    Quantidade:
+      name: quantidade
+      in: query
+      required: true
+      description: Quantidade máxima de questões.
+      schema:
+        type: integer
+        minimum: 1
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          const: ok
+    Alternativa:
+      type: object
+      required:
+      - id
+      - texto
+      properties:
+        id:
+          type: integer
+        texto:
+          type: string
+      additionalProperties: false
+    Questao:
+      type: object
+      required:
+      - id
+      - enunciado
+      - alternativas
+      properties:
+        id:
+          type: integer
+        enunciado:
+          type: string
+        alternativas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alternativa'
+      additionalProperties: false
+    ErrorResponse:
+      type: object
+      required:
+      - status
+      - statusCode
+      - message
+      properties:
+        status:
+          type: string
+          const: error
+        statusCode:
+          type: integer
+        message:
+          type: string
+      additionalProperties: false
+  responses:
+    ValidationError:
+      description: Parâmetro inválido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            statusCode: 400
+            message: O parâmetro 'quantidade' deve ser um inteiro positivo.
+    NotFoundError:
+      description: Banca ou concurso não encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            statusCode: 404
+            message: Banca informada com o ID '999' não foi encontrada.
+    InternalError:
+      description: Erro interno inesperado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            statusCode: 500
+            message: Erro interno do servidor.

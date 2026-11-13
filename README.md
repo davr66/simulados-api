@@ -1,4 +1,6 @@
-# Simulados API
+# Projeto B — Simulados API
+
+[![CI](https://github.com/davr66/simulados-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/davr66/simulados-api/actions/workflows/ci.yml)
 
 API RESTful para geração de simulados de questões de concursos públicos.
 A aplicação usa Node.js 22, TypeScript strict, Express, Knex e PostgreSQL 16.
@@ -24,13 +26,21 @@ A API estará disponível em `http://localhost:3000`. O health check é:
 GET http://localhost:3000/health
 ```
 
-O seed é executado separadamente quando necessário:
+O comando de inicialização executa migrations e seed idempotente. Para
+acompanhar a inicialização:
 
 ```powershell
-docker compose --env-file .env.development exec api npm run seed
+docker compose --env-file .env.development logs api
 ```
 
 Para staging local, consulte [docs/environments.md](docs/environments.md).
+
+## Deploy
+
+O ambiente publicado usa Render com deploy automático a partir da branch
+principal. As variáveis de ambiente e a `DATABASE_URL` são configuradas no
+painel do Render. O container executa migrations e seed idempotente antes de
+iniciar a API; o health check usa `/health`.
 
 ## Endpoint principal
 
@@ -93,9 +103,11 @@ Consulte [docs/observability.md](docs/observability.md).
 
 ## Contratos e documentação
 
-- [docs/openapi.json](docs/openapi.json): contrato OpenAPI 3.1;
+- [docs/openapi.yaml](docs/openapi.yaml): contrato OpenAPI 3.1;
 - [docs/adr/0001-cargo-materia-model.md](docs/adr/0001-cargo-materia-model.md):
   decisão arquitetural;
+- [docs/ia.md](docs/ia.md): registro da assistência de IA;
+- [docs/desempenho.md](docs/desempenho.md): medição de desempenho e p95;
 - [.spectral.yaml](.spectral.yaml): regras de validação OpenAPI.
 
 Valide o contrato com:

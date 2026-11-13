@@ -32,6 +32,6 @@
     "test:contract": "vitest run tests/contract",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
-    "openapi:lint": "spectral lint docs/openapi.json"
+    "openapi:lint": "spectral lint docs/openapi.yaml"
   }
 }
